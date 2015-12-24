@@ -222,7 +222,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 					rename($file_location_old, $file_location);
 					$post['file'] = substr($post['file'], 0, -1) . 'a'; // replace webm with weba
 				}
-				if ($file_mime == "video/webm" || $file_mime == "video/mp4" || "video/ogg") {
+				if ($file_mime == "video/webm" || $file_mime == "video/mp4" || $file_mime == "video/ogg") {
 					list($thumb_maxwidth, $thumb_maxheight) = thumbnailDimensions($post);
 					shell_exec("ffmpegthumbnailer -s " . max($thumb_maxwidth, $thumb_maxheight) . " -i $file_location -o $thumb_location");
 					$thumb_info = getimagesize($thumb_location);
