@@ -34,10 +34,6 @@ if (!file_exists('settings.php')) {
 }
 require 'settings.php';
 
-if (TINYIB_TRIPSEED == '' || TINYIB_ADMINPASS == '') {
-	fancyDie('TINYIB_TRIPSEED and TINYIB_ADMINPASS must be configured');
-}
-
 // Check directories are writable by the script
 $writedirs = array("res", "src", "thumb");
 if (TINYIB_DBMODE == 'flatfile') {
@@ -58,6 +54,10 @@ if (in_array(TINYIB_DBMODE, array('flatfile', 'mysql', 'mysqli', 'sqlite', 'pdo'
 
 foreach ($includes as $include) {
 	include $include;
+}
+
+if (TINYIB_TRIPSEED == '' || TINYIB_ADMINPASS == '') {
+	fancyDie('TINYIB_TRIPSEED and TINYIB_ADMINPASS must be configured');
 }
 
 $redirect = true;
@@ -89,7 +89,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 		$post['message'] = $_POST['message']; // Treat message as raw HTML
 	} else {
 		$rawposttext = '';
-		$post['message'] = str_replace("\n", '<br>', makeLinksClickable(colorQuote(postLink(cleanString(rtrim($_POST['message']))))));
+		$post['message'] = str_replace("\n", '<br>',bbcode(makeLinksClickable(colorQuote(postLink(cleanString(rtrim($_POST['message'])))))));
 	}
 	$post['password'] = ($_POST['password'] != '') ? md5(md5($_POST['password'])) : '';
 	$post['nameblock'] = nameBlock($post['name'], $post['tripcode'], $post['email'], time(), $rawposttext);
@@ -166,6 +166,8 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$thumb_type = '.jpg';
 			} else if ($file_type == '.swf') {
 				$thumb_type = '.png';
+			}  else if ($file_type == '.ogg') {
+				$thumb_type = '.png';
 			} else {
 				$thumb_type = $file_type;
 			}
@@ -177,13 +179,11 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 			$file_location = "src/" . $post['file'];
 			$thumb_location = "thumb/" . $post['thumb'];
 
-			checkDuplicateFile($post['file_hex']);
-
 			if (!move_uploaded_file($_FILES['file']['tmp_name'], $file_location)) {
 				fancyDie("Could not copy uploaded file.");
 			}
 
-			if ($file_type == '.webm') {
+			 if ($file_type == '.webm' || $file_type == '.ogg') {
 				$file_mime_output = shell_exec('file --mime-type ' . $file_location);
 				$file_mime_split = explode(' ', $file_mime_output);
 				$file_mime = strtolower(trim(array_pop($file_mime_split)));
@@ -197,7 +197,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$file_mime = $file_info['mime'];
 			}
 
-			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png" || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash")))) {
+			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png" || (TINYIB_OGG && ($file_mime == "audio/ogg")) || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash")))) {
 				@unlink($file_location);
 				fancyDie(supportedFileTypes());
 			}
@@ -210,56 +210,50 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 			if ($file_mime == "audio/webm" || $file_mime == "video/webm") {
 				$post['image_width'] = intval(shell_exec('mediainfo --Inform="Video;%Width%" ' . $file_location));
 				$post['image_height'] = intval(shell_exec('mediainfo --Inform="Video;%Height%" ' . $file_location));
-
 				if ($post['image_width'] <= 0 || $post['image_height'] <= 0) {
 					$post['image_width'] = 0;
 					$post['image_height'] = 0;
-
 					$file_location_old = $file_location;
 					$file_location = substr($file_location, 0, -1) . 'a'; // replace webm with weba
 					rename($file_location_old, $file_location);
-
 					$post['file'] = substr($post['file'], 0, -1) . 'a'; // replace webm with weba
 				}
-
 				if ($file_mime == "video/webm") {
 					list($thumb_maxwidth, $thumb_maxheight) = thumbnailDimensions($post);
 					shell_exec("ffmpegthumbnailer -s " . max($thumb_maxwidth, $thumb_maxheight) . " -i $file_location -o $thumb_location");
-
 					$thumb_info = getimagesize($thumb_location);
 					$post['thumb_width'] = $thumb_info[0];
 					$post['thumb_height'] = $thumb_info[1];
-
 					if ($post['thumb_width'] <= 0 || $post['thumb_height'] <= 0) {
 						@unlink($file_location);
 						@unlink($thumb_location);
 						fancyDie("Sorry, your video appears to be corrupt.");
 					}
-
 					addVideoOverlay($thumb_location);
 				}
-
+				if ($file_mime == "audio/ogg") {
+					if (!copy('audio.png', $thumb_location)) {
+						@unlink($file_location);
+						fancyDie("Could not create thumbnail.");
+					}
+					addVideoOverlay($thumb_location);
+				}
 				$duration = intval(shell_exec('mediainfo --Inform="' . ($file_mime == 'video/webm' ? 'Video' : 'Audio') . ';%Duration%" ' . $file_location));
 				$mins = floor(round($duration / 1000) / 60);
 				$secs = str_pad(floor(round($duration / 1000) % 60), 2, "0", STR_PAD_LEFT);
-
 				$post['file_original'] = "$mins:$secs" . ($post['file_original'] != '' ? (', ' . $post['file_original']) : '');
 			} else {
 				$file_info = getimagesize($file_location);
-
 				$post['image_width'] = $file_info[0];
 				$post['image_height'] = $file_info[1];
-
 				if ($file_mime == "application/x-shockwave-flash") {
 					if (!copy('swf_thumbnail.png', $thumb_location)) {
 						@unlink($file_location);
 						fancyDie("Could not create thumbnail.");
 					}
-
 					addVideoOverlay($thumb_location);
 				} else {
 					list($thumb_maxwidth, $thumb_maxheight) = thumbnailDimensions($post);
-
 					if (!createThumbnail($file_location, $thumb_location, $thumb_maxwidth, $thumb_maxheight)) {
 						@unlink($file_location);
 						fancyDie("Could not create thumbnail.");
@@ -275,7 +269,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 
 	if ($post['file'] == '') { // No file uploaded
 		$allowed = "";
-		if (TINYIB_PIC || TINYIB_SWF || TINYIB_WEBM) {
+		if (TINYIB_PIC || TINYIB_SWF || TINYIB_WEBM || TINYIB_OGG) {
 			$allowed = "file";
 		}
 		if (TINYIB_EMBED) {
@@ -303,7 +297,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 	$post['id'] = insertPost($post);
 
 	if ($post['moderated'] == '1') {
-		if (strtolower($post['email']) == 'noko') {
+		if (true || strtolower($post['email']) == 'noko') {
 			$redirect = 'res/' . ($post['parent'] == TINYIB_NEWTHREAD ? $post['id'] : $post['parent']) . '.html#' . $post['id'];
 		}
 
@@ -563,4 +557,8 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 
 if ($redirect) {
 	echo '--&gt; --&gt; --&gt;<meta http-equiv="refresh" content="' . (isset($slow_redirect) ? '3' : '0') . ';url=' . (is_string($redirect) ? $redirect : 'index.html') . '">';
+}
+function NoZalgo($string)
+{
+    return preg_replace('~&([a-z]{1,2})(?:acute|cedil|circ|grave|lig|orn|ring|slash|th|tilde|uml|caron);~i', '$1', htmlentities($string, ENT_COMPAT, 'UTF-8'));
 }
