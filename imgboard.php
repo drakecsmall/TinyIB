@@ -168,6 +168,8 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$thumb_type = '.png';
 			}  else if ($file_type == '.ogg') {
 				$thumb_type = '.png';
+			}  else if ($file_type == '.mp4') {
+				$thumb_type = '.jpg';
 			} else {
 				$thumb_type = $file_type;
 			}
@@ -183,7 +185,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				fancyDie("Could not copy uploaded file.");
 			}
 
-			 if ($file_type == '.webm' || $file_type == '.ogg') {
+			 if ($file_type == '.webm' || $file_type == '.ogg' || $file_type == '.mp4') {
 				$file_mime_output = shell_exec('file --mime-type ' . $file_location);
 				$file_mime_split = explode(' ', $file_mime_output);
 				$file_mime = strtolower(trim(array_pop($file_mime_split)));
@@ -197,7 +199,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$file_mime = $file_info['mime'];
 			}
 
-			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png" || (TINYIB_OGG && ($file_mime == "audio/ogg")) || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash")))) {
+			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png" || (TINYIB_OGG && ($file_mime == "audio/ogg")) || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm" || $file_mime == "video/mp4")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash")))) {
 				@unlink($file_location);
 				fancyDie(supportedFileTypes());
 			}
@@ -207,7 +209,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				fancyDie("File transfer failure. Please go back and try again.");
 			}
 
-			if ($file_mime == "audio/webm" || $file_mime == "video/webm") {
+			if ($file_mime == "audio/webm" || $file_mime == "video/webm" || $file_mime == "video/mp4") {
 				$post['image_width'] = intval(shell_exec('mediainfo --Inform="Video;%Width%" ' . $file_location));
 				$post['image_height'] = intval(shell_exec('mediainfo --Inform="Video;%Height%" ' . $file_location));
 				if ($post['image_width'] <= 0 || $post['image_height'] <= 0) {
@@ -218,7 +220,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 					rename($file_location_old, $file_location);
 					$post['file'] = substr($post['file'], 0, -1) . 'a'; // replace webm with weba
 				}
-				if ($file_mime == "video/webm") {
+				if ($file_mime == "video/webm" || $file_mime == "video/mp4") {
 					list($thumb_maxwidth, $thumb_maxheight) = thumbnailDimensions($post);
 					shell_exec("ffmpegthumbnailer -s " . max($thumb_maxwidth, $thumb_maxheight) . " -i $file_location -o $thumb_location");
 					$thumb_info = getimagesize($thumb_location);
@@ -231,14 +233,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 					}
 					addVideoOverlay($thumb_location);
 				}
-				if ($file_mime == "audio/ogg") {
-					if (!copy('audio.png', $thumb_location)) {
-						@unlink($file_location);
-						fancyDie("Could not create thumbnail.");
-					}
-					addVideoOverlay($thumb_location);
-				}
-				$duration = intval(shell_exec('mediainfo --Inform="' . ($file_mime == 'video/webm' ? 'Video' : 'Audio') . ';%Duration%" ' . $file_location));
+				$duration = intval(shell_exec('mediainfo --Inform="' . ($file_mime == 'video/webm' ? 'Video' : 'Audio' || $file_mime == 'video/mp4' ? 'Video' : 'Audio') . ';%Duration%" ' . $file_location));
 				$mins = floor(round($duration / 1000) / 60);
 				$secs = str_pad(floor(round($duration / 1000) % 60), 2, "0", STR_PAD_LEFT);
 				$post['file_original'] = "$mins:$secs" . ($post['file_original'] != '' ? (', ' . $post['file_original']) : '');
@@ -260,12 +255,12 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 					}
 				}
 			}
-
 			$thumb_info = getimagesize($thumb_location);
 			$post['thumb_width'] = $thumb_info[0];
 			$post['thumb_height'] = $thumb_info[1];
 		}
 	}
+
 
 	if ($post['file'] == '') { // No file uploaded
 		$allowed = "";
