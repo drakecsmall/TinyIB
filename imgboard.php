@@ -166,6 +166,8 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$thumb_type = '.jpg';
 			} else if ($file_type == '.swf') {
 				$thumb_type = '.png';
+			} else if ($file_type == '.pdf') {
+				$thumb_type == '.png';
 			}  else if ($file_type == '.ogg') {
 				$thumb_type = '.jpg';
 			}  else if ($file_type == '.mp4') {
@@ -201,7 +203,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$file_mime = $file_info['mime'];
 			}
 
-			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png"|| (TINYIB_OGG && ($file_mime == "audio/ogg" || $file_mime == "video/ogg")) || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm" || $file_mime == "video/mp4")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash")))) {
+			if (!($file_mime == "image/jpeg" || $file_mime == "image/gif" || $file_mime == "image/png"|| (TINYIB_OGG && ($file_mime == "audio/ogg" || $file_mime == "video/ogg")) || (TINYIB_WEBM && ($file_mime == "video/webm" || $file_mime == "audio/webm" || $file_mime == "video/mp4")) || (TINYIB_SWF && ($file_mime == "application/x-shockwave-flash" || $file_mime == "application/pdf")))) {
 				@unlink($file_location);
 				fancyDie(supportedFileTypes());
 			}
@@ -243,7 +245,7 @@ if (isset($_POST['message']) || isset($_POST['file'])) {
 				$file_info = getimagesize($file_location);
 				$post['image_width'] = $file_info[0];
 				$post['image_height'] = $file_info[1];
-				if ($file_mime == "application/x-shockwave-flash") {
+				if ($file_mime == "application/x-shockwave-flash" || $file_mime == "application/pdf") {
 					if (!copy('swf_thumbnail.png', $thumb_location)) {
 						@unlink($file_location);
 						fancyDie("Could not create thumbnail.");
