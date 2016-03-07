@@ -209,7 +209,7 @@ function colorQuote($message) {
 	if (substr($message, -1, 1) != "\n") {
 		$message .= "\n";
 	}
-	return preg_replace('/^(&gt;[^\>](.*))\n/m', '<span class="unkfunc">\\1</span>' . "\n", $message);
+	return preg_replace("/^\s*&gt;.*$/m", '<span class="unkfunc">$0</span>', $message);
 }
 
 function deletePostImages($post) {
@@ -261,8 +261,8 @@ function checkFlood() {
 }
 
 function checkMessageSize() {
-	if (strlen($_POST["message"]) > 8000) {
-		fancyDie("Please shorten your message, or post it in multiple parts. Your message is " . strlen($_POST["message"]) . " characters long, and the maximum allowed is 8000.");
+	if (strlen($_POST["message"]) > 15000) {
+		fancyDie("Please shorten your message, or post it in multiple parts. Your message is " . strlen($_POST["message"]) . " characters long, and the maximum allowed is 15000.");
 	}
 }
 
@@ -514,4 +514,27 @@ function getEmbed($url) {
 		}
 	}
 	return array($service, $result);
+}
+function bbcode($data) {
+$input = array(
+      '/\[b\](.*?)\[\/b\]/is', // Bold
+      '/\[i\](.*?)\[\/i\]/is', // Italics
+      '/\[u\](.*?)\[\/u\]/is', // Underline
+      '/\[s\](.*?)\[\/s\]/is', // Spoiler
+      '/\==(.*?)\==/is', //Redtext
+      '/\##(.*?)\##/is', //Bluetext
+      '/\%%(.*?)\%%/is', //Whitetext
+      '/\&&(.*?)\&&/is', //Ggreentext
+  );
+  $output = array(
+    '<strong>$1</strong>', // Bold
+      '<em>$1</em>', // Italics
+      '<u>$1</u>', // Underline
+      '<span class="spoiler">$1</span>', // Spoiler
+      '<strong style="color: #F80000;">$1</strong>', //Redtext
+      '<strong style="color: #1C19B5;">$1</strong>', //Bluetext
+      '<strong style="color: #FFFFFF;">$1</strong>', //Whitetext
+      '<strong style="color: #1E8237;">$1</strong>', //Ggreentext
+  );
+  return preg_replace($input, $output, $data);
 }

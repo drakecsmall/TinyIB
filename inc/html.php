@@ -7,13 +7,17 @@ function pageHeader() {
 	$return = <<<EOF
 <!DOCTYPE html>
 <html>
+  <body onload="set_style_from_cookie()"> 
 	<head>
 		<meta http-equiv="content-type" content="text/html;charset=UTF-8">
 		<meta http-equiv="cache-control" content="max-age=0">
 		<meta http-equiv="cache-control" content="no-cache">
-		<meta http-equiv="expires" content="0">
+		<meta http-equiv="cache-control" content="no-store">
+		<meta http-equiv="expires" content="-1">
 		<meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
-		<meta http-equiv="pragma" content="no-cache">
+		<meta http-equiv="refresh" content="6000000">
+		<meta http-equiv="pragma" content="no-cache" >
+		<script type="text/javascript" src="tinyib.js?v=12392823"></script>
 		<title>
 EOF;
 	$return .= TINYIB_BOARDDESC . <<<EOF
@@ -22,8 +26,12 @@ EOF;
 		<link rel="stylesheet" type="text/css" href="css/global.css">
 		<link rel="stylesheet" type="text/css" href="css/futaba.css" title="Futaba">
 		<link rel="alternate stylesheet" type="text/css" href="css/burichan.css" title="Burichan">
+		<link rel="alternate stylesheet" type="text/css" href="css/tomorrow.css" title="Tomorrow">
+		<link rel="alternate stylesheet" type="text/css" href="css/minimalist.css" title="Minimalist">
+		<link rel="alternate stylesheet" type="text/css" href="css/christmas.css" title="Christmas">
 		<script src="js/jquery.js"></script>
 		<script src="js/tinyib.js"></script>
+		<script src="js/themes.js"></script>
 	</head>
 EOF;
 	return $return;
@@ -37,6 +45,7 @@ function pageFooter() {
 		<div class="footer">
 			- <a href="http://www.2chan.net" target="_top">futaba</a> + <a href="http://www.1chan.net" target="_top">futallaby</a> + <a href="https://github.com/tslocum/TinyIB" target="_top">tinyib</a> -
 		</div>
+<div style="text-align:center"><a href="https://www.eff.org/pages/blue-ribbon-campaign"><img src="https://www.eff.org/files/brstrip.gif" alt="Join the Blue Ribbon Online Free Speech Campaign" /><br/></a></div>
 	</body>
 </html>
 EOF;
@@ -53,6 +62,9 @@ function supportedFileTypes() {
 	if (TINYIB_WEBM) {
 		array_push($types_allowed, "WebM");
 	}
+	if (TINYIB_OGG) {
+		array_push($types_allowed, "Ogg");
+	}
 
 	$i = 0;
 	$types_count = count($types_allowed);
@@ -66,7 +78,7 @@ function supportedFileTypes() {
 	}
 
 	if ($types_formatted != "") {
-		return "Supported file type" . ($types_count != 1 ? "s are " : " is ") . $types_formatted . ".";
+		return "Supported file types" . ($types_count != 1 ? "s are " : " is ") . $types_formatted . ".";
 	}
 
 	return $types_formatted;
@@ -277,7 +289,7 @@ EOF;
 		$captcha_html = <<<EOF
 					<tr>
 						<td class="postblock">
-							CAPTCHA
+							HAHAHAHA
 						</td>
 						<td>
 							<input type="text" name="captcha" id="captcha" size="6" accesskey="c" autocomplete="off">&nbsp;&nbsp;(enter the text below)<br>
@@ -335,11 +347,24 @@ EOF;
 	}
 
 	$body = <<<EOF
-	<body>
-		<div class="adminbar">
-			[<a href="$managelink" style="text-decoration: underline;">Manage</a>]
-		</div>
-		<div class="logo">
+<body onunload="">
+<div style="color:#0000FF">
+
+[<a href="http://domain">Home</a>]
+<select name="switchcontrol" size="1" onChange="chooseStyle(this.options[this.selectedIndex].value, 60)">
+<option value="none" selected="selected">Themes</option>
+<option name="Futaba" value="Futaba" id="Futaba"> Futaba</option>
+<option name="Burichan" value="Burichan" id="Burichan"> Burichan</option>
+<option name="Tomorrow" value="Tomorrow" id="Tomorrow"> Tomorrow</option>
+<option name="Minimalist" value="Minimalist" id="Minimalist"> Minimalist</option>
+<option name="Christmas" value="Christmas" id="Christmas"> Christmas</option>
+</select>
+                <div class="adminbar">
+                        [<a href="$managelink" style="text-decoration: underline;">Manage</a>]
+                </div>
+</div>
+	<div class="logo">
+
 EOF;
 	$body .= TINYIB_LOGO . TINYIB_BOARDDESC . <<<EOF
 		</div>
@@ -400,6 +425,7 @@ EOF;
 							<ul>
 								$reqmod_html
 								$filetypes_html
+								Try out <a href="https://openhost.xyz"> Openhost</a> to upload large files
 								$max_file_size_rules_html
 								$thumbnails_html
 								$unique_posts_html
@@ -420,7 +446,14 @@ EOF;
 			<tbody>
 				<tr>
 					<td>
-						Delete Post <input type="password" name="password" id="deletepostpassword" size="8" placeholder="Password">&nbsp;<input name="deletepost" value="Delete" type="submit">
+						<a id="return-thread" href="../">[Return]</a>
+						<form><input type=button value="Refresh" onClick="window.location.reload(true)"></form> 
+						<a id="refresh-thread" href="#">[Top]</a>
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Gun your Post <input type="password" name="password" id="deletepostpassword" size="8" placeholder="Password">&nbsp;<input name="deletepost" value="Delete" type="submit">
 					</td>
 				</tr>
 			</tbody>

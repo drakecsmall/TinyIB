@@ -1,5 +1,6 @@
 TinyIB - A Lightweight and Efficient [Image Board](http://en.wikipedia.org/wiki/Imageboard) Script
 ====
+This is the [freech.net] (https://freech.net) Edited Version
 
 **Got database? Get speed.**  Use [MySQL](http://mysql.com) or [SQLite](http://sqlite.org) for an efficient set-up able to handle high amounts of traffic.
 
